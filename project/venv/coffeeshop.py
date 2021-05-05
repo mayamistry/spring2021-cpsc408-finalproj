@@ -11,6 +11,18 @@ db = mysql.connector.connect(
     database = "CoffeeShopDB"
 )
 
+def printMenu():
+    print("Here is what you can do with the Coffee Shop Database: ")
+    print("(1) - Display all information from the database")
+    print("(2) - Filtered results from the database")
+    print("(3) - Add a new coffee shop to the database")
+    print("(4) - Delete a coffee shop from the database")
+    print("(5) - Update information about a specific coffee shop")
+    print("(6) - Add food items that a specific coffee shop serves")
+    print("(7) - Add drink items that a specific coffee shop serves")
+    print("(8) - Generate CSV file reports")
+    print("(9) - Quit application")
+
 #1 - Function to print and display all records from database/tables
 # STATUS - DONE
 def displayRecords():
@@ -39,23 +51,23 @@ def displayRecords():
 
     #FoodTable
     print("Table Name: FoodTable")
-    mycursor.execute("SELECT FoodID, FoodName, FoodRating, Price FROM FoodTable WHERE isDeleted = false;")
+    mycursor.execute("SELECT FoodID, FoodName FROM FoodTable WHERE isDeleted = false;")
     shops = mycursor.fetchall()
     # This function below actually  prints out all rows and columns instead of just a few - found online
     pd.set_option("display.max_rows", None, "display.max_columns", None, "display.width", None)
     df = DataFrame(shops,
-                   columns=['Food ID', 'Food Name', 'Food Rating', 'Price'])
+                   columns=['Food ID', 'Food Name'])
     print(df)
     print("---------------------------------------------------------------------------------")
 
     #DrinkTable
     print("Table Name: DrinkTable")
-    mycursor.execute("SELECT DrinkID, DrinkName, DrinkRating, Price FROM DrinkTable WHERE isDeleted = false;")
+    mycursor.execute("SELECT DrinkID, DrinkName FROM DrinkTable WHERE isDeleted = false;")
     shops = mycursor.fetchall()
     # This function below actually  prints out all rows and columns instead of just a few - found online
     pd.set_option("display.max_rows", None, "display.max_columns", None, "display.width", None)
     df = DataFrame(shops,
-                   columns=['Drink ID', 'Drink Name', 'Drink Rating', 'Price'])
+                   columns=['Drink ID', 'Drink Name'])
     print(df)
     print("---------------------------------------------------------------------------------")
 
@@ -72,23 +84,23 @@ def displayRecords():
 
     #CoffeeShopServesDrink
     print("Table Name: CoffeeShopServesDrink")
-    mycursor.execute("SELECT DrinkServedID, DrinkID, ShopID FROM CoffeeShopServesDrink WHERE isDeleted = false;")
+    mycursor.execute("SELECT DrinkServedID, DrinkID, ShopID, DrinkRating, Price FROM CoffeeShopServesDrink WHERE isDeleted = false;")
     shops = mycursor.fetchall()
     # This function below actually  prints out all rows and columns instead of just a few - found online
     pd.set_option("display.max_rows", None, "display.max_columns", None, "display.width", None)
     df = DataFrame(shops,
-                   columns=['Drink Served ID', 'Drink ID', 'Shop ID'])
+                   columns=['Drink Served ID', 'Drink ID', 'Shop ID', 'DrinkRating', 'Price'])
     print(df)
     print("---------------------------------------------------------------------------------")
 
     # CoffeeShopServesFood
     print("Table Name: CoffeeShopServesFood")
-    mycursor.execute("SELECT FoodServedID, FoodID, ShopID FROM CoffeeShopServesFood WHERE isDeleted = false;")
+    mycursor.execute("SELECT FoodServedID, FoodID, ShopID, FoodRating, Price FROM CoffeeShopServesFood WHERE isDeleted = false;")
     shops = mycursor.fetchall()
     # This function below actually  prints out all rows and columns instead of just a few - found online
     pd.set_option("display.max_rows", None, "display.max_columns", None, "display.width", None)
     df = DataFrame(shops,
-                   columns=['Food Served ID', 'Food ID', 'Shop ID'])
+                   columns=['Food Served ID', 'Food ID', 'Shop ID', 'FoodRating', 'Price'])
     print(df)
     print("---------------------------------------------------------------------------------")
 
@@ -105,7 +117,7 @@ def displayRecords():
 
 
 #2 - Function to query data with different parameters
-#STATUS - STILL NEED TO WORK THROUGH THIS AND MAKE PROCEDURES
+#STATUS - DONE
 def parameterQueries():
     mycursor = db.cursor()
     print("What type of results would you like to print out from the database?")
@@ -179,12 +191,12 @@ def parameterQueries():
             status = True
         elif (userChoice == 8):
             drinkName = input("What kind of drink are you looking for?: ")
-            mycursor.callproc('specificDrink', args = drinkName)
+            mycursor.callproc('specificDrink', [drinkName])
             drink = 0
             for result in mycursor.stored_results():
                 drink = result.fetchall()
             df = pd.DataFrame(drink, columns=['Coffee Shop Name', 'Drink Name'])
-            if (df == []):
+            if (len(df.index) == 0):
                 print("No coffee shops have the drink you searched for.")
             else:
                 print(df)
@@ -195,6 +207,7 @@ def parameterQueries():
 
 #3 - Function to create a new record
 # STATUS - FIRST ONE FIGURED OUT AND NEED TO DO THE REST - might be a little tough...
+# Doing transactions with this one
 def createNewRecord():
     mycursor = db.cursor()
     #For right now, only do it for the CoffeeShopTable
@@ -203,8 +216,53 @@ def createNewRecord():
     driveTime = input("Enter the average drive time from Chapman: ")
     while (driveTime.isalpha() == True):
         driveTime = input("Error. Please try again and enter a numerical value for drive time: ")
-    mycursor.execute("INSERT INTO CoffeeShopTable (CoffeeShopName, PhoneNumber, AverageDriveTimeFromChapman) VALUES (%s,%s,%s);", (shopName, phoneNumber, driveTime))
-    db.commit()
+    status = False
+    while (status == False):
+        try:
+            wifi = int(input("Does this coffee shop have WiFi? Enter 1 for yes and 0 for no: "))
+            if (wifi == 1 or wifi == 0):
+                status = True
+            else:
+                print("Error: please enter a 1 or 0.")
+                continue
+        except (ValueError):
+            print("Error: please enter an integer of either 1 or 0.")
+    status = False
+    while (status == False):
+        try:
+            seating = int(input("Does this coffee shop have indoor seating? Enter 1 for yes and 0 for no: "))
+            if (seating == 1 or seating == 0):
+                status = True
+            else:
+                print("Error: please enter a 1 or 0.")
+                continue
+        except (ValueError):
+            print("Error: please enter an integer of either 1 or 0.")
+    status = False
+    while (status == False):
+        try:
+            outlets = int(input("Does this coffee shop have outlets? Enter 1 for yes and 0 for no: "))
+            if (outlets == 1 or outlets == 0):
+                status = True
+            else:
+                print("Error: please enter a 1 or 0.")
+                continue
+        except (ValueError):
+            print("Error: please enter an integer of either 1 or 0.")
+    status = False
+    while (status == False):
+        try:
+            music = int(input("Does this coffee shop have music? Enter 1 for yes and 0 for no: "))
+            if (music == 1 or music == 0):
+                status = True
+            else:
+                print("Error: please enter a 1 or 0.")
+                continue
+        except (ValueError):
+            print("Error: please enter an integer of either 1 or 0.")
+    #Call the procedure after gathering all of the information
+    mycursor.callproc('createCoffeeShop', [shopName, phoneNumber, driveTime, wifi, seating, outlets, music])
+    print("Successfully added the new coffee shop to the database!")
 
 
 #4 - Function  that performs a soft delete on any of the tables
@@ -292,6 +350,12 @@ def deleteRecord():
 def updateRecord():
     print("done")
 
+def addFood():
+    print("done")
+
+def addDrink():
+    print("done")
+
 #STATUS - FIGURED OUT FOR 1, NEED TO FIGURE OUT HOW TO CALL PROCEDURE IN PYTHON
 def generateReports():
     #Need to figure out how to call procedure in python
@@ -306,12 +370,3 @@ def generateReports():
 
 
 
-
-
-
-
-#displayRecords()
-#createNewRecord()
-#deleteRecord()
-#generateReports()
-parameterQueries()
