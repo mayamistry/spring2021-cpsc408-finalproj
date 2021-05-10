@@ -18,10 +18,14 @@ def printMenu():
     print("(3) - Add a new coffee shop to the database")
     print("(4) - Delete a coffee shop from the database")
     print("(5) - Update information about a specific coffee shop")
-    print("(6) - Add food items that a specific coffee shop serves")
-    print("(7) - Add drink items that a specific coffee shop serves")
-    print("(8) - Generate CSV file reports")
-    print("(9) - Quit application")
+    print("(6) - Update the price and rating of a drink item from a specific coffee shop")
+    print("(7) - Update the price and rating of a food item from a specific coffee shop")
+    print("(8) - Update information about an employee from a specific coffee shop")
+    print("(9) - Add food items that a specific coffee shop serves")
+    print("(10) - Add drink items that a specific coffee shop serves")
+    print("(11) - Add an employee that works at a specific coffee shop")
+    print("(12) - Generate CSV file reports")
+    print("(13) - Quit application")
 
 #1 - Function to print and display all records from database/tables
 # STATUS - DONE
@@ -203,6 +207,7 @@ def parameterQueries():
             status = True
         else:
             print("Error: please choose one of the numerical options provided.")
+    print("---------------------------------------------------------------------------------")
 
 
 #3 - Function to create a new record
@@ -263,6 +268,8 @@ def createNewRecord():
     #Call the procedure after gathering all of the information
     mycursor.callproc('createCoffeeShop', [shopName, phoneNumber, driveTime, wifi, seating, outlets, music])
     print("Successfully added the new coffee shop to the database!")
+    print("---------------------------------------------------------------------------------")
+
 
 
 #4 - Function  that performs a soft delete on any of the tables
@@ -344,29 +351,479 @@ def deleteRecord():
             status = True
         else:
             table = input("Table name you entered does not exist, please try again: ")
+    print("---------------------------------------------------------------------------------")
+
 
 
 #STATUS - NOT FIGURED OUT AT ALL
 def updateRecord():
-    print("done")
+    mycursor = db.cursor()
+    mycursor.execute(
+        "SELECT ShopID, CoffeeShopName, PhoneNumber, AverageDriveTimeFromChapman FROM CoffeeShopTable WHERE isDeleted = false;")
+    shops = mycursor.fetchall()
+    # This function below actually  prints out all rows and columns instead of just a few - found online
+    pd.set_option("display.max_rows", None, "display.max_columns", None, "display.width", None)
+    df = DataFrame(shops,
+                   columns=['Shop ID', 'Coffee Shop Name', 'Phone Number', 'Average Drive Time From Chapman'])
+    print(df)
+    status = False
+    shopID = 0
+    while (status == False):
+        try:
+            shopID = int(input("Enter the ID for which coffee shop you would like to update: "))
+            mycursor.execute("SELECT * FROM CoffeeShopTable WHERE ShopID = %s AND isDeleted = false", [shopID])
+            data = mycursor.fetchall()
+            if (data == []):
+                print("Error: the ID you entered does not exist. Please try again.")
+                continue
+            else:
+                status = True
+        except (ValueError):
+            print("Error: please an integer")
+    status = False
+    while (status == False):
+        try:
+            userInput = int(input("Would you like to update this coffee shop's name? Enter 1 for yes and 0 for no: "))
+            if (userInput == 1):
+                #run the query here
+                newName =  input("Enter the new name for this coffee shop: ")
+                mycursor.execute("UPDATE CoffeeShopTable SET CoffeeShopName = %s WHERE ShopID = %s", (newName, shopID))
+                db.commit()
+                status = True
+            elif (userInput == 0):
+                status = True
+            else:
+                print("Error: please enter only a 1 or 0")
+                continue
+        except (ValueError):
+            print("Error: please enter an integer of either 1 or 0.")
+    status = False
+    while (status == False):
+        try:
+            userInput = int(input("Would you like to update this coffee shop's phone number? Enter 1 for yes and 0 for no: "))
+            if (userInput == 1):
+                # run the query here
+                newNumber = input("Enter the new phone number for this coffee shop: ")
+                mycursor.execute("UPDATE CoffeeShopTable SET PhoneNumber = %s WHERE ShopID = %s", (newNumber, shopID))
+                db.commit()
+                status = True
+            elif (userInput == 0):
+                status = True
+            else:
+                print("Error: please enter only a 1 or 0")
+                continue
+        except (ValueError):
+            print("Error: please enter an integer of either 1 or 0.")
+    status = False
+    while (status == False):
+        try:
+            userInput = int(input("Would you like to update this coffee shop's average drive time from Chapman? Enter 1 for yes and 0 for no: "))
+            if (userInput == 1):
+                # run the query here
+                newDrive = input("Enter the new average drive time from Chapman for this coffee shop: ")
+                mycursor.execute("UPDATE CoffeeShopTable SET AverageDriveTimeFromChapman = %s WHERE ShopID = %s", (newDrive, shopID))
+                db.commit()
+                status = True
+            elif (userInput == 0):
+                status = True
+            else:
+                print("Error: please enter only a 1 or 0")
+                continue
+        except (ValueError):
+            print("Error: please enter an integer of either 1 or 0.")
+    print("Successfully made all of the updates for this coffee shop!")
+    print("---------------------------------------------------------------------------------")
+
+def updateDrink():
+    mycursor  = db.cursor()
+    mycursor.execute("SELECT * FROM updateDrinkQuery");
+    shops = mycursor.fetchall()
+    # This function below actually  prints out all rows and columns instead of just a few - found online
+    pd.set_option("display.max_rows", None, "display.max_columns", None, "display.width", None)
+    df = DataFrame(shops,
+                   columns=['Shop ID', 'Coffee Shop Name', 'Drink Served ID', 'Drink Name', 'Drink Price', 'Drink Rating'])
+    print(df)
+    status = False
+    shopID = 0
+    drinkID = 0
+    while (status == False):
+        try:
+            shopID = int(input("Enter the Shop ID you are updating the drink for: "))
+            drinkID = int(input("Enter the Drink Served ID that corresponds with the Shop ID: "))
+            mycursor.execute("SELECT * FROM updateDrinkQuery WHERE ShopID = %s AND DrinkServedID = %s", (shopID, drinkID))
+            data = mycursor.fetchall()
+            if (data == []):
+                print("Error: the IDs you entered do not exist. Please try again.")
+                continue
+            else:
+                newPrice = int(input("Enter the new price for this drink: "))
+                newRating = int(input("Enter the new rating for this drink: "))
+                mycursor.execute("UPDATE CoffeeShopServesDrink SET Price = %s, DrinkRating = %s WHERE DrinkServedID = %s",
+                                 (newPrice, newRating, drinkID))
+                db.commit()
+                status = True
+        except (ValueError):
+            print("Error: please an integer")
+    print("Successfully updated the drink!")
+    print("---------------------------------------------------------------------------------")
+
+
+
+def updateFood():
+    mycursor = db.cursor()
+    mycursor.execute("SELECT * FROM updateFoodQuery");
+    shops = mycursor.fetchall()
+    # This function below actually  prints out all rows and columns instead of just a few - found online
+    pd.set_option("display.max_rows", None, "display.max_columns", None, "display.width", None)
+    df = DataFrame(shops,
+                   columns=['Shop ID', 'Coffee Shop Name', 'Food Served ID', 'Food Name', 'Food Price',
+                            'Food Rating'])
+    print(df)
+    status = False
+    shopID = 0
+    foodID = 0
+    while (status == False):
+        try:
+            shopID = int(input("Enter the Shop ID you are updating the drink for: "))
+            foodID = int(input("Enter the Food Served ID that corresponds with the Shop ID: "))
+            mycursor.execute("SELECT * FROM updateFoodQuery WHERE ShopID = %s AND FoodServedID = %s",
+                             (shopID, foodID))
+            data = mycursor.fetchall()
+            if (data == []):
+                print("Error: the IDs you entered do not exist. Please try again.")
+                continue
+            else:
+                newPrice = int(input("Enter the new price for this food item: "))
+                newRating = int(input("Enter the new rating for this food item: "))
+                mycursor.execute("UPDATE CoffeeShopServesFood SET Price = %s, FoodRating = %s WHERE FoodServedID = %s",
+                                 (newPrice, newRating, foodID))
+                db.commit()
+                status = True
+        except (ValueError):
+            print("Error: please an integer")
+    print("Successfully updated the food item!")
+    print("---------------------------------------------------------------------------------")
+
+def updateEmployee():
+    mycursor = db.cursor()
+    mycursor.execute("SELECT * FROM updateEmployeeQuery");
+    shops = mycursor.fetchall()
+    # This function below actually  prints out all rows and columns instead of just a few - found online
+    pd.set_option("display.max_rows", None, "display.max_columns", None, "display.width", None)
+    df = DataFrame(shops,
+                   columns=['Shop ID', 'Coffee Shop Name', 'Employee ID', 'Employee Name', 'Employee Rating',
+                            'Review Description'])
+    print(df)
+    status = False
+    employeeID = 0
+    while (status == False):
+        try:
+            employeeID = int(input("Enter the Employee ID that you would like to update: "))
+            mycursor.execute("SELECT * FROM updateEmployeeQuery WHERE EmployeeID = %s",
+                             [employeeID])
+            data = mycursor.fetchall()
+            if (data == []):
+                print("Error: the IDs you entered do not exist. Please try again.")
+                continue
+            else:
+                newRating = int(input("Enter the new rating for this employee: "))
+                newDescription = input("Enter a new review description for this employee: ")
+                mycursor.execute("UPDATE EmployeeTable SET  EmployeeRating = %s, ReviewDescription = %s WHERE EmployeeID = %s",
+                                 (newRating, newDescription, employeeID))
+                db.commit()
+                status = True
+        except (ValueError):
+            print("Error: please an integer")
+    print("Successfully updated the employee!")
+    print("---------------------------------------------------------------------------------")
+
+def addEmployee():
+    overallCheck = False
+    while (overallCheck == False):
+        mycursor = db.cursor()
+        mycursor.execute(
+            "SELECT ShopID, CoffeeShopName, PhoneNumber, AverageDriveTimeFromChapman FROM CoffeeShopTable WHERE isDeleted = false;")
+        shops = mycursor.fetchall()
+        # This function below actually  prints out all rows and columns instead of just a few - found online
+        pd.set_option("display.max_rows", None, "display.max_columns", None, "display.width", None)
+        df = DataFrame(shops,
+                       columns=['Shop ID', 'Coffee Shop Name', 'Phone Number', 'Average Drive Time From Chapman'])
+        print(df)
+        status = False
+        shopID = 0
+        while (status == False):
+            try:
+                shopID = int(input("Enter the ID for which coffee shop you would like to add an employee for: "))
+                mycursor.execute("SELECT * FROM CoffeeShopTable WHERE ShopID = %s AND isDeleted = false", [shopID])
+                data = mycursor.fetchall()
+                if (data == []):
+                    print("Error: the ID you entered does not exist. Please try again.")
+                    continue
+                else:
+                    status = True
+            except (ValueError):
+                print("Error: please an integer")
+        # First add the employee to employee table and then add to the works at table
+        status = False
+        while (status == False):
+            try:
+                employeeName = input("Enter the name of this new employee: ")
+                employeeRating = int(input("Enter the rating for this employee: "))
+                description = input("Provide a review description for this employee: ")
+                mycursor.execute("INSERT INTO EmployeeTable(EmployeeName, EmployeeRating, ReviewDescription) VALUES (%s, %s, %s)",
+                    (employeeName, employeeRating, description))
+                employeeID = mycursor.lastrowid
+                mycursor.execute("INSERT INTO EmployeeWorksAt(EmployeeID, ShopID) VALUES (%s, %s)", (employeeID, shopID))
+                db.commit()
+                status = True
+            except (ValueError):
+                print("Error: please enter an integer of either 1 or 0.")
+        print("Successfully add this employee to the database for this coffee shop!")
+        print("\n")
+        status = False
+        while (status == False):
+            try:
+                check = int(input(
+                    "Would you like to continue adding food items to a coffee shop? Enter 1 for yes and 0 for no: "))
+                if (check == 1):
+                    status = True
+                elif (check == 0):
+                    overallCheck = True
+                    status = True
+                else:
+                    print("Error: please enter only a 1 or 0")
+                    continue
+            except (ValueError):
+                print("Error: please enter an integer of either 1 or 0.")
+    print("---------------------------------------------------------------------------------")
 
 def addFood():
-    print("done")
+    overallCheck = False
+    while (overallCheck == False):
+        mycursor = db.cursor()
+        mycursor.execute(
+            "SELECT ShopID, CoffeeShopName, PhoneNumber, AverageDriveTimeFromChapman FROM CoffeeShopTable WHERE isDeleted = false;")
+        shops = mycursor.fetchall()
+        # This function below actually  prints out all rows and columns instead of just a few - found online
+        pd.set_option("display.max_rows", None, "display.max_columns", None, "display.width", None)
+        df = DataFrame(shops,
+                       columns=['Shop ID', 'Coffee Shop Name', 'Phone Number', 'Average Drive Time From Chapman'])
+        print(df)
+        status = False
+        shopID = 0
+        while (status == False):
+            try:
+                shopID = int(input("Enter the ID for which coffee shop you would like to add a food item for: "))
+                mycursor.execute("SELECT * FROM CoffeeShopTable WHERE ShopID = %s AND isDeleted = false", [shopID])
+                data = mycursor.fetchall()
+                if (data == []):
+                    print("Error: the ID you entered does not exist. Please try again.")
+                    continue
+                else:
+                    status = True
+            except (ValueError):
+                print("Error: please an integer")
+        #First check if any of the foods are from the original food list
+        mycursor.execute(
+            "SELECT FoodID, FoodName FROM FoodTable WHERE isDeleted = false;")
+        shops = mycursor.fetchall()
+        # This function below actually  prints out all rows and columns instead of just a few - found online
+        pd.set_option("display.max_rows", None, "display.max_columns", None, "display.width", None)
+        df = DataFrame(shops,
+                       columns=['Food ID', 'Food Name'])
+        print(df)
+        status = False
+        while (status == False):
+            try:
+                foodExist = int(input("Does the food item you want to add already exits in this table above? Enter 1 for yes and 0 for no: "))
+                if (foodExist == 1):
+                    # run the query here
+                    foodID = int(input("Enter the food ID that you would like to add for this coffee shop: "))
+                    foodRating = int(input("Enter the rating of this food item at this specific coffee shop: "))
+                    price = int(input("Enter the price of this food item at this specific coffee shop: "))
+                    mycursor.execute("INSERT INTO CoffeeShopServesFood(ShopID, FoodID, FoodRating, Price) VALUES (%s, %s, %s, %s)", (shopID, foodID, foodRating, price))
+                    db.commit()
+                    status = True
+                elif (foodExist == 0):
+                    #Need to add another food item to food table
+                    foodName = input("Enter the name of the new food item you're adding: ")
+                    # add new food to the food table and grab it's ID
+                    mycursor.execute("INSERT INTO FoodTable(FoodName) VALUES (%s)", [foodName])
+                    db.commit()
+                    foodID = mycursor.lastrowid
+                    foodRating = int(input("Enter the rating of this food item at this specific coffee shop: "))
+                    price = int(input("Enter the price of this food item at this specific coffee shop: "))
+                    mycursor.execute(
+                        "INSERT INTO CoffeeShopServesFood(ShopID, FoodID, FoodRating, Price) VALUES (%s, %s, %s, %s)", (shopID, foodID, foodRating, price))
+                    db.commit()
+                    status = True
+                else:
+                    print("Error: please enter only a 1 or 0")
+                    continue
+            except (ValueError):
+                print("Error: please enter an integer of either 1 or 0.")
+        print("Successfully add this food item to the database for this coffee shop!")
+        print("\n")
+        status = False
+        while (status == False):
+            try:
+                check = int(input("Would you like to continue adding food items to a coffee shop? Enter 1 for yes and 0 for no: "))
+                if (check == 1):
+                    status = True
+                elif (check == 0):
+                    overallCheck = True
+                    status = True
+                else:
+                    print("Error: please enter only a 1 or 0")
+                    continue
+            except (ValueError):
+                print("Error: please enter an integer of either 1 or 0.")
+    print("---------------------------------------------------------------------------------")
+
 
 def addDrink():
-    print("done")
+    overallCheck = False
+    while (overallCheck == False):
+        mycursor = db.cursor()
+        mycursor.execute(
+            "SELECT ShopID, CoffeeShopName, PhoneNumber, AverageDriveTimeFromChapman FROM CoffeeShopTable WHERE isDeleted = false;")
+        shops = mycursor.fetchall()
+        # This function below actually  prints out all rows and columns instead of just a few - found online
+        pd.set_option("display.max_rows", None, "display.max_columns", None, "display.width", None)
+        df = DataFrame(shops,
+                       columns=['Shop ID', 'Coffee Shop Name', 'Phone Number', 'Average Drive Time From Chapman'])
+        print(df)
+        status = False
+        shopID = 0
+        while (status == False):
+            try:
+                shopID = int(input("Enter the ID for which coffee shop you would like to add a drink item for: "))
+                mycursor.execute("SELECT * FROM CoffeeShopTable WHERE ShopID = %s AND isDeleted = false", [shopID])
+                data = mycursor.fetchall()
+                if (data == []):
+                    print("Error: the ID you entered does not exist. Please try again.")
+                    continue
+                else:
+                    status = True
+            except (ValueError):
+                print("Error: please an integer")
+        # First check if any of the foods are from the original food list
+        mycursor.execute(
+            "SELECT DrinkID, DrinkName FROM DrinkTable WHERE isDeleted = false;")
+        shops = mycursor.fetchall()
+        # This function below actually  prints out all rows and columns instead of just a few - found online
+        pd.set_option("display.max_rows", None, "display.max_columns", None, "display.width", None)
+        df = DataFrame(shops,
+                       columns=['Drink ID', 'Drink Name'])
+        print(df)
+        status = False
+        while (status == False):
+            try:
+                drinkExist = int(input(
+                    "Does the drink item you want to add already exits in this table above? Enter 1 for yes and 0 for no: "))
+                if (drinkExist == 1):
+                    # run the query here
+                    drinkID = int(input("Enter the drink ID that you would like to add for this coffee shop: "))
+                    drinkRating = int(input("Enter the rating of this drink item at this specific coffee shop: "))
+                    price = int(input("Enter the price of this drink item at this specific coffee shop: "))
+                    mycursor.execute(
+                        "INSERT INTO CoffeeShopServesDrink(ShopID, DrinkID, DrinkRating, Price) VALUES (%s, %s, %s, %s)",
+                        (shopID, drinkID, drinkRating, price))
+                    db.commit()
+                    status = True
+                elif (drinkExist == 0):
+                    # Need to add another drink item to drink table
+                    drinkName = input("Enter the name of the new drink item you're adding: ")
+                    # add new drink to the drink table and grab it's ID
+                    mycursor.execute("INSERT INTO DrinkTable(DrinkName) VALUES (%s)", [drinkName])
+                    db.commit()
+                    drinkID = mycursor.lastrowid
+                    drinkRating = int(input("Enter the rating of this drink item at this specific coffee shop: "))
+                    price = int(input("Enter the price of this drink item at this specific coffee shop: "))
+                    mycursor.execute(
+                        "INSERT INTO CoffeeShopServesDrink(ShopID, DrinkID, DrinkRating, Price) VALUES (%s, %s, %s, %s)",
+                        (shopID, drinkID, drinkRating, price))
+                    db.commit()
+                    status = True
+                else:
+                    print("Error: please enter only a 1 or 0")
+                    continue
+            except (ValueError):
+                print("Error: please enter an integer of either 1 or 0.")
+        print("Successfully add this drink  item to the database for this coffee shop!")
+        print("\n")
+        status = False
+        while (status == False):
+            try:
+                check = int(input(
+                    "Would you like to continue adding drink items to a coffee shop? Enter 1 for yes and 0 for no: "))
+                if (check == 1):
+                    status = True
+                elif (check == 0):
+                    overallCheck = True
+                    status = True
+                else:
+                    print("Error: please enter only a 1 or 0")
+                    continue
+            except (ValueError):
+                print("Error: please enter an integer of either 1 or 0.")
+    print("---------------------------------------------------------------------------------")
 
-#STATUS - FIGURED OUT FOR 1, NEED TO FIGURE OUT HOW TO CALL PROCEDURE IN PYTHON
+#STATUS - DONE
 def generateReports():
-    #Need to figure out how to call procedure in python
+    #Report 1 - generating the best study spots csv file
     mycursor = db.cursor()
-    mycursor.execute("SELECT CoffeeShopName, StudySpotsTable.WiFi, StudySpotsTable.Outlets FROM StudySpotsTable JOIN CoffeeShopTable CST on StudySpotsTable.ShopID = CST.ShopID WHERE WiFi = 1 AND Outlets = 1 AND CST.isDeleted = false;")
-    data = mycursor.fetchall()
-
+    mycursor.callproc('bestStudySpots')
+    study = 0
+    for result in mycursor.stored_results():
+        study = result.fetchall()
+    df = pd.DataFrame(study, columns=['CoffeeShopName', 'WiFi', 'Outlets'])
     pd.set_option("display.max_rows", None, "display.max_columns", None, "display.width", None)
-    df = DataFrame(data,
-                   columns=['CoffeeShopName', 'WiFi', 'Outlets'])
     df.to_csv('BestStudySpots_Report.csv')
+
+    #Report 2 - average drink rating at each coffee shop
+    mycursor = db.cursor()
+    mycursor.execute("SELECT * FROM avgDrinkRating")
+    drink = mycursor.fetchall()
+    df = pd.DataFrame(drink, columns=['CoffeeShopName', 'Avg Drink Rating'])
+    pd.set_option("display.max_rows", None, "display.max_columns", None, "display.width", None)
+    df.to_csv('AverageDrinkRatingPerCoffeeShop_Report.csv')
+
+    #Report 3 - average food rating at each coffee shop
+    mycursor = db.cursor()
+    mycursor.execute("SELECT * FROM avgFoodRating")
+    food = mycursor.fetchall()
+    df = pd.DataFrame(food, columns=['CoffeeShopName', 'Avg Food Rating'])
+    pd.set_option("display.max_rows", None, "display.max_columns", None, "display.width", None)
+    df.to_csv('AverageFoodRatingPerCoffeeShop.csv')
+
+    # Report 4 - average drink price at each coffee shop
+    mycursor = db.cursor()
+    mycursor.execute("SELECT * FROM avgDrinkPrice")
+    drink1 = mycursor.fetchall()
+    df = pd.DataFrame(drink1, columns=['CoffeeShopName', 'Avg Drink Price'])
+    pd.set_option("display.max_rows", None, "display.max_columns", None, "display.width", None)
+    df.to_csv('AverageDrinkPricePerCoffeeShop_Report.csv')
+
+    # Report 5 - average food price at each coffee shop
+    mycursor = db.cursor()
+    mycursor.execute("SELECT * FROM avgFoodPrice")
+    food = mycursor.fetchall()
+    df = pd.DataFrame(food, columns=['CoffeeShopName', 'Avg Food Price'])
+    pd.set_option("display.max_rows", None, "display.max_columns", None, "display.width", None)
+    df.to_csv('AverageFoodPricePerCoffeeShop.csv')
+
+    print("Successfully created all reports! Refer to your local machine to view these reports.")
+    print("Here are the reports that were created: ")
+    print("Report 1: Best Coffee Shops for Studying (WiFi and Outlets)")
+    print("Report 2: Average drink rating for each coffee shop")
+    print("Report 3: Average food rating for each coffee shop")
+    print("Report 4: Average drink price for each coffee shop")
+    print("Report 5: Average food price for each coffee shop")
+    print("---------------------------------------------------------------------------------")
+
+
+
 
 
 

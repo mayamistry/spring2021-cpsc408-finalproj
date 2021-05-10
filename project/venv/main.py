@@ -7,30 +7,44 @@ def runProgram():
     print("\n")
     print("---------------------------------------------------------------------------------")
     userInput = ""
-    while (userInput != "7"):
+    status = False
+    while (status == False):
         c.printMenu()
         print("---------------------------------------------------------------------------------")
         userInput = input("What would you like to do? Enter the numerical value: ")
+        print("\n")
         if (userInput == "1"):
+            print("Here is a display all current information in the coffee shop database: ")
             c.displayRecords()
         elif (userInput == "2"):
+            print("You chose to print out filtered results!")
             c.parameterQueries()
         elif (userInput == "3"):
+            print("You chose to add a new OC coffee shop to the database!")
             c.createNewRecord()
         elif (userInput == "4"):
+            print("You chose to print out filtered results!")
             c.deleteRecord()
         elif (userInput == "5"):
             c.updateRecord()
         elif (userInput == "6"):
-            c.addFood()
+            c.updateDrink()
         elif (userInput == "7"):
-            c.addDrink()
+            c.updateFood()
         elif (userInput == "8"):
-            c.generateReports()
+            c.updateEmployee()
         elif (userInput == "9"):
+            c.addFood()
+        elif (userInput == "10"):
+            c.addDrink()
+        elif (userInput == "11"):
+            c.addEmployee()
+        elif (userInput == "12"):
+            c.generateReports()
+        elif (userInput == "13"):
             print("Exiting program. Thank you!")
             print("---------------------------------------------------------------------------------")
-            break
+            status = True
         else:
             print("Input invalid. Please enter a number between 1 and 6. ")
             continue
